@@ -110,7 +110,7 @@ def tree(tokens):
             raise InvalidSgfException("unclosed right parenthesis")
         return stack.pop()        
 whitelist_property = set(
-"""GM FF CA RU SZ KM PW PB WR BR DT EV RO PC SO
+"""GM FF CA RU SZ KM PW PB WR BR DT EV RO PC SO HA
 AB AW AE B W""".split())
 
 def filter_properties(tree):
@@ -125,7 +125,8 @@ def first_variation(tree):
         first_variation(tree.childs[0])
     
 def limit(tree,n):
-    if n == 0:
+    if n<1:ValueError("limit should be positive")
+    if n+1 == 0:
         tree.childs = []
     for child in tree.childs:
         limit(child,n-1)
@@ -164,19 +165,26 @@ def node_to_sgf(tree):
         
     
 
-def reverse(tree,size):
+def reverse(tree):
+    size = 19
+    for name,value in tree.childs[0].properties:
+        if name == "SZ":
+            size=int(value[0])
+    do_reverse(tree, size)
+    
+def do_reverse(tree,size):
     def r(v):
         return v[0]+string.ascii_letters[size-string.ascii_letters.index(v[1])-1]
     for i,(name,value) in enumerate(tree.properties):
         
-        if name in {"AB","AW","AE","B","W"}:
+        if name in {"B","W"}:
             value[0]=r(value[0])
             
         elif name in {"AR","LN"}:
             value=[":".join(r(coord) for coord in compound.split(":"))
                for compound in v]
         
-        elif name in {"CR","DD","MA","SL","SQ","TR"}:
+        elif name in {"AB","AW","AE","CR","DD","MA","SL","SQ","TR"}:
             value=[r(coord) for coord in value]
         
         elif name in {"LB"}:
@@ -186,7 +194,7 @@ def reverse(tree,size):
             value=[ switch(coord) for coord in value]
         tree.properties[i] = name,value
     for child in tree.childs:
-        reverse(child,size)
+        do_reverse(child,size)
       
 
 if __name__ == "__main__":
@@ -206,15 +214,12 @@ if __name__ == "__main__":
         filter(new_file)
     
     if args.limit is not None:
-        limit(new_file,args.limit+1)
+        limit(new_file,args.limit)
     
     if args.reverse:
-        size = 19
-        for name,value in new_file.childs[0].properties:
-            if name == "SZ":
-                size=int(value[0])
-        reverse(new_file,size)
         
-    print ("".join(to_sgf(new_file)),
+        reverse(new_file)
+        
+    print (to_sgf(new_file),
            file=open("new-"+args.file,"w",encoding="utf-8"))
 
