@@ -3,6 +3,9 @@ import pprint
 import sys
 import string
 import argparse
+
+class InvalidSgfException(Exception):
+    pass
 uppers = set (string.ascii_uppercase)
 def tokenize(file):
     f = iter(partial(file.read,1),"")
@@ -18,15 +21,20 @@ def tokenize(file):
                 last_char = next(f)
             yield "property_id","".join(property_id)
         elif last_char == "[":
-            last_char = next(f)
-            property_value = []
-            while last_char != "]":
-                if last_char == "\\":
-                    property_value.append(next(f))
-                else:
-                    property_value.append(last_char)
+            try:
                 last_char = next(f)
-            yield "property_value","".join(property_value)
+                property_value = []
+                while last_char != "]":
+                    if last_char == "\\":
+                        property_value.append(next(f))
+                    else:
+                        property_value.append(last_char)
+                    last_char = next(f)
+                yield "property_value","".join(property_value)
+            except StopIteration as e:
+                #in python 3.3 could use from None
+                raise InvalidSgfException("unclosed property value") 
+                
             last_char= next(f)
         else:
             
@@ -57,11 +65,14 @@ def tree(tokens):
                 current_node = current_node.childs[-1]
                 stack.append(current_node)
                 token = next(tokens)
-                assert token == ("special",";")
+                if token != ("special",";"):
+                    raise InvalidSgfException("semi-colon expected")
                 token = next(tokens)
                 
             elif token == ("special", ")"):
                 print ("found )")
+                if len(stack) <2:
+                    raise InvalidSgfInvalidSgfException("unexpected right parenthesis")
                 stack.pop()
                 current_node = stack[-1]
                 token = next(tokens)
@@ -73,7 +84,8 @@ def tree(tokens):
                 token = next(tokens)
             else:
                 type,value = token
-          
+                if type != "property_id":
+                    raise InvalidSgfException("unkown token"+repr(token))
                 print("testing property_id",token,repr(type))
                 while type == "property_id":
                     v=value
@@ -92,7 +104,10 @@ def tree(tokens):
                         
                     current_node.properties.append( (v,values))
                     print("next token",token)
+            
     except StopIteration:
+        if len(stack) != 1:
+            raise InvalidSgfException("unclosed right parenthesis")
         return stack.pop()        
 whitelist_property = set(
 """GM FF CA RU SZ KM PW PB WR BR DT EV RO PC SO
@@ -148,15 +163,7 @@ def node_to_sgf(tree):
             yield ")"
         
     
-import pprint      
-def test():
-    f=open("test.sgf",encoding="utf-8")
-    t=list(tree(tokenize(f)))
-    pprint.pprint(t)
-    print ("".join(to_sgf(t)))
-    t=filter(t)
-    pprint.pprint(t)
-    print ("".join(to_sgf(t)))
+
 def reverse(tree,size):
     def r(v):
         return v[0]+string.ascii_letters[size-string.ascii_letters.index(v[1])-1]
@@ -180,7 +187,7 @@ def reverse(tree,size):
         tree.properties[i] = name,value
     for child in tree.childs:
         reverse(child,size)
-
+      
 
 if __name__ == "__main__":
     #test()
