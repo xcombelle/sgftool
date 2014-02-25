@@ -19,7 +19,7 @@ def tokenize(file):
     ("special",")")
     ("special",";")
     ("property_name","XX")
-    ("property_name","xx")
+    ("property_value","xx")
     
     """
     f = iter(partial(file.read,1),"")
