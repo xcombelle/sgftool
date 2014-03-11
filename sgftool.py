@@ -46,8 +46,8 @@ def tokenize(file):
                     last_char = next(f)
                 yield "property_value","".join(property_value)
             except StopIteration as e:
-                #in python 3.3 could use from None
-                raise InvalidSgfException("unclosed property value") 
+                
+                raise InvalidSgfException("unclosed property value") from None
                 
             last_char= next(f)
         else:
@@ -64,14 +64,15 @@ class Node:
         self.childs = []
 
     def __repr__(self):
-        return "Node(properties="+repr(self.properties)+",childs="+repr(self.childs)+")"
+        return ("Node(properties="+repr(self.properties)
+                +",childs="+repr(self.childs)+")")
 
 def tree(tokens):
 
     """generate a tree of game node, input is the output of tokenize"""
     
     #to remove the debug print
-    def print(*args): pass
+    def log(*args): pass
 
     current_node = Node()
     stack=[current_node]
@@ -80,10 +81,10 @@ def tree(tokens):
         
         while True:
             
-            print ("processing1",token)
+            log("processing1",token)
             
             if token == ("special", "("):
-                print ("found (")
+                log("found (")
                 
                 current_node.childs.append(Node())
                 current_node = current_node.childs[-1]
@@ -94,14 +95,14 @@ def tree(tokens):
                 token = next(tokens)
                 
             elif token == ("special", ")"):
-                print ("found )")
+                log ("found )")
                 if len(stack) <2:
-                    raise InvalidSgfInvalidSgfException("unexpected right parenthesis")
+                    raise InvalidSgfException("unexpected right parenthesis")
                 stack.pop()
                 current_node = stack[-1]
                 token = next(tokens)
             elif token == ("special",";"):
-                print ("yielding node")
+                log("yielding node")
                 current_node.childs.append(Node())
                 current_node = current_node.childs[-1]
                 
@@ -110,7 +111,7 @@ def tree(tokens):
                 type,value = token
                 if type != "property_name":
                     raise InvalidSgfException("unkown token"+repr(token))
-                print("testing property_name",token,repr(type))
+                log("testing property_name",token,repr(type))
                 while type == "property_name":
                     v=value
                     
@@ -118,20 +119,20 @@ def tree(tokens):
                     token = next( tokens)
                     type,value = token
                     
-                    print ("consumed",token)
+                    log ("consumed",token)
                     while type == "property_value":
                         
                         values.append(value)
                         token = next( tokens)
                         type,value = token
-                        print ("testing",token)
+                        log ("testing",token)
                         
                     current_node.properties.append( (v,values))
-                    print("next token",token)
+                    log("next token",token)
             
     except StopIteration:
         if len(stack) != 1:
-            raise InvalidSgfException("unclosed right parenthesis")
+            raise InvalidSgfException("unclosed right parenthesis") from None
         return stack.pop()        
 
 #whitelist of properties not filtered out by filter_properties
@@ -219,7 +220,13 @@ def do_reverse(tree,size):
     """reverse all the coords in the tree
     modify the tree"""
     def r(v):
-        return v[0]+string.ascii_letters[size-string.ascii_letters.index(v[1])-1]
+        try:
+            index = string.ascii_letters.index(v[1])
+            if not 0 <= index < size:
+                raise InvalidSgfException("invalid coordinate "+v)
+            return v[0]+string.ascii_letters[size - index - 1]
+        except ValueError:
+            raise InvalidSgfException("invalid coordinate "+v)
     for i,(name,value) in enumerate(tree.properties):
         
         if name in {"B","W"}:
