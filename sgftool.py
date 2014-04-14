@@ -251,7 +251,7 @@ if __name__ == "__main__":
     parser.add_argument("--filter", action='store_true',
                         help="filter coments and variation")
     parser.add_argument("--limit", action='store', type=int, default=None,
-                        help="limit the variations to max depth")
+                        help="limit the variations to LIMIT depth")
     parser.add_argument("--reverse",action="store_true",
                         help="reverse the board upside down")
     parser.add_argument("file",action="store")
