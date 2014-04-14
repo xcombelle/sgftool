@@ -63,10 +63,6 @@ class Node:
         self.properties = []
         self.childs = []
 
-    def __repr__(self):
-        return ("Node(properties="+repr(self.properties)
-                +",childs="+repr(self.childs)+")")
-
 def tree(tokens):
 
     """generate a tree of game node, input is the output of tokenize"""
@@ -232,7 +228,7 @@ def do_reverse(tree,size):
         if name in {"B","W"}:
             value[0]=r(value[0])
             
-        elif name in {"AR","LN"}:
+        elif name in {"AR","LN"}: #pragma: no cover
             value=[":".join(r(coord) for coord in compound.split(":"))
                for compound in v]
         

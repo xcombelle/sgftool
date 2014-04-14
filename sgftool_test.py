@@ -10,6 +10,10 @@ from sgftool import (to_sgf,
 
 class MyTest(unittest.TestCase):
 
+    def test_bad_token(self):
+        with self.assertRaises(InvalidSgfException):
+            tree(iter([("bad_token","value")]))
+            
     def test_filter(self):
         with open("test.sgf",encoding="utf-8") as input, \
              open("test_filter.sgf",encoding="utf-8") as output:
@@ -51,27 +55,23 @@ class MyTest(unittest.TestCase):
     
     def test_missing_semicolon(self):
         with open("test_missing_semicolon.sgf",encoding="utf-8") as input:
-            self.assertRaises(InvalidSgfException,
-                              lambda input: tree(tokenize(input)),
-                              input)
+            with self.assertRaises(InvalidSgfException):
+                tree(tokenize(input))
     
     def test_unclosed_property(self):
         with open("test_unclosed_property.sgf",encoding="utf-8") as input:
-            self.assertRaises(InvalidSgfException,
-                              lambda input: tree(tokenize(input)),
-                              input)
+            with self.assertRaises(InvalidSgfException):
+                tree(tokenize(input))
     
     def test_invalid_coordinate_number(self):
         with open("test_invalid_coordinate_number.sgf",encoding="utf-8") as input:
-            self.assertRaises(InvalidSgfException,
-                              lambda input: reverse(tree(tokenize(input))),
-                              input)
+            with self.assertRaises(InvalidSgfException):
+                reverse(tree(tokenize(input)))
 
     def test_invalid_coordinate_out_of_bounds(self):
         with open("test_invalid_coordinate_out_of_bounds.sgf",encoding="utf-8") as input:
-            self.assertRaises(InvalidSgfException,
-                              lambda input: reverse(tree(tokenize(input))),
-                              input)
+            with self.assertRaises(InvalidSgfException):
+                reverse(tree(tokenize(input)))
 
 
 if __name__ == '__main__':
