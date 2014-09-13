@@ -1,10 +1,17 @@
+from __future__ import print_function,division,unicode_literals
 from functools import partial
+
+from codecs import open
 import pprint
 import sys
 import string
 import argparse
+import traceback
+import pdb
 
 class InvalidSgfException(Exception):
+    pass
+class CantProcessSgfException(Exception):
     pass
     
     
@@ -47,7 +54,7 @@ def tokenize(file):
                 yield "property_value","".join(property_value)
             except StopIteration as e:
                 
-                raise InvalidSgfException("unclosed property value") from None
+                raise InvalidSgfException("unclosed property value")
                 
             last_char= next(f)
         else:
@@ -56,7 +63,6 @@ def tokenize(file):
             last_char = next(f)
 
 class Node:
-
     """represent a node in the game tree"""
     
     def __init__(self):
@@ -69,22 +75,25 @@ def tree(tokens):
     
     #to remove the debug print
     def log(*args): pass
-
+    #log=print
     current_node = Node()
-    stack=[current_node]
+    tree_node = current_node
+    stack=[]
+    
     try:    
         token = next(tokens)
         
         while True:
+            #log("stack",[to_sgf(n) for n in stack])
             
             log("processing1",token)
             
             if token == ("special", "("):
                 log("found (")
                 
+                stack.append(current_node)
                 current_node.childs.append(Node())
                 current_node = current_node.childs[-1]
-                stack.append(current_node)
                 token = next(tokens)
                 if token != ("special",";"):
                     raise InvalidSgfException("semi-colon expected")
@@ -92,10 +101,10 @@ def tree(tokens):
                 
             elif token == ("special", ")"):
                 log ("found )")
-                if len(stack) <2:
+                if len(stack) <1:
                     raise InvalidSgfException("unexpected right parenthesis")
-                stack.pop()
-                current_node = stack[-1]
+                
+                current_node = stack.pop()
                 token = next(tokens)
             elif token == ("special",";"):
                 log("yielding node")
@@ -104,6 +113,7 @@ def tree(tokens):
                 
                 token = next(tokens)
             else:
+               # print(token,file=sys.stderr)
                 type,value = token
                 if type != "property_name":
                     raise InvalidSgfException("unkown token"+repr(token))
@@ -127,13 +137,13 @@ def tree(tokens):
                     log("next token",token)
             
     except StopIteration:
-        if len(stack) != 1:
-            raise InvalidSgfException("unclosed right parenthesis") from None
-        return stack.pop()        
+        if len(stack) != 0:
+            raise InvalidSgfException("unclosed right parenthesis")
+        return tree_node        
 
 #whitelist of properties not filtered out by filter_properties
 whitelist_property = set(
-"""GM FF CA RU SZ KM PW PB WR BR DT EV RO PC SO HA
+"""AP ST GM FF CA RU SZ KM PW PB WR BR DT EV RO PC SO HA
 AB AW AE B W""".split())
 
 def filter_properties(tree):
@@ -174,11 +184,20 @@ def filter(tree):
 def to_sgf(tree):
     """convert tree to sgf"""
     
-    return "("+"".join(node_to_sgf(tree))+")"
-def node_to_sgf(tree):
+    return "".join("".join(node_to_sgf(node)) for node in tree.childs)[1:]
+def to_txt(tree):
+    return "".join(node_to_txt(tree)) 
+def node_to_sgf(tree,has_slibings=True):
     """convert a node of the tree to sgf"""
+    yield '\n'
+    
+    if has_slibings:
+         yield "("
+    yield ";"
         
     for name,values in tree.properties:
+        if name in ("RU","PW"):
+            yield "\n"
         yield name
         for value in values:
             yield "["
@@ -186,22 +205,142 @@ def node_to_sgf(tree):
             yield "]"
     
     for v in tree.childs:
+        for node in node_to_sgf(v,has_slibings= len(tree.childs) > 1):
+            yield node
+            
 
-        yield '\n'
-        
-        if len(tree.childs) > 1:
-            yield "("
-    
-        yield ";"
-        
-        for x in node_to_sgf(v):
-            yield x
-
-        if len(tree.childs) >1:
-            yield ")"
+    if has_slibings:
+        yield ")"
         
     
+def position_to_txt(position,size):
+    coords = [string.ascii_letters.index(p) for p in position]
+    if len(coords)!=2:
+        raise InvalidSgfException("bad coordinate "+position)
+    #print(coords)
+    #print("ABCDEFGHJKLMNOPQRST"[coords[0]])
+    #print(str(size-coords[1]))
+    return "ABCDEFGHJKLMNOPQRST"[coords[0]]+str(size-coords[1])
 
+def node_to_txt(tree, depth=0, size=None,
+                ha=0, color="B",handicap = None,first=-1,first_white=False):
+    
+    #print (depth,tree.properties)
+    if handicap is None:
+        handicap = []
+    if depth == 1:
+        japanese = False
+        
+        rules = None
+        for name,values in tree.properties:
+            if name == "RU":
+                if len(values)!=1:
+                    raise InvalidSgfException("too much values for RU")
+                else:
+                    if values[0]=="Japanese":
+                        japanese= True
+                    rules= values[0]
+            elif name == "AB":
+                handicap.extend(values)
+                
+            elif name == "AW":
+                raise CantProcessSgfException("adding stones is unexpected")
+            elif  name == "SZ":
+                if len(values)!=1:
+                    raise InvalidSgfException("SZ property has several values")
+                if not values[0].isdigit():
+                    raise InvalidSgfException("SZ property is not integer")
+                size = int(values[0])
+                
+            elif name == "HA":
+                if len(values)!=1:
+                    raise InvalidSgfException("HA property has several values")
+                if not values[0].isdigit():
+                    raise InvalidSgfException("HA property is not integer")
+                ha = int(values[0])
+        if ha is None:
+            ha = 0
+        if size is None:
+            size = 19
+        if size >19:
+            raise CantProcessSgfException("Can't handle size >19")
+        yield('[Size "{}"]\n'.format(size))
+        yield('[Rules "{}"]\n'.format(rules))
+        if ha==0:
+            first = depth+1
+    elif depth>1:
+        b = []
+        w = []
+        comment = ""
+        for name,values in tree.properties:
+            #print(name)
+            if name == "B":
+                b = values
+            elif name == "W":
+                w = values
+            elif name in ("AW","AB"):
+                raise CantProcessSgfException("add white or black in tree")
+            elif name=="C":
+                if len(values)!=1:
+                    raise InvalidSgfException("comment values !=1")
+                comment = " {"+values[0].replace("}",r"\}")+"}"
+        if first == -1:
+            
+            if w:
+                yield('[Handicap "{}"]\n').format(
+                    " ".join(position_to_txt(h,size) for h in handicap))
+                ha = 0
+                first = depth
+                first_white = True
+                if len(w)!=1:
+                    raise CantProcessSgfException("length W is !=1")
+                yield("1.{coords}{comment}\n"
+                        .format(coords=position_to_txt(w[0],size),
+                                comment= comment))
+            else:
+                handicap.extend(b)
+            
+        else:
+            #print (depth-first,b,w,not(b and not w),depth-first %2==1,first_white)
+            
+            if w or b:
+                if first_white ^ (depth-first) %2==1:
+                    if not ( w and not b):
+                        raise CantProcessSgfException("non alterning colors")
+                    else:
+                        if len(w)!=1:
+                             raise InvalidSgfException("W property length != 1")
+                        else:
+                            #print(w[0])
+                            yield "{num}.{coord}{comment}\n".format(
+                                num = depth-first+1,
+                                coord = position_to_txt(w[0],size),
+                                comment = comment)
+                else:
+                    if not ( b and not w):
+                        raise CantProcessSgfException("non alterning colors")
+                    else:
+                        if len(b)!=1:
+                             raise InvalidSgfException("B property length != 1")
+                        else:
+                            yield "{num}.{coord}{comment}\n".format(
+                                num = depth-first+1,
+                                coord = position_to_txt(b[0],size),
+                                comment = comment)
+
+    for v in tree.childs:
+        #print("yielding depth",depth)
+        #print("sgf",to_sgf(tree))
+        for node in node_to_txt(v,depth=depth+1,size=size,ha=ha,handicap=handicap,first =first,first_white=first_white):
+            yield node
+        #print("returning from child,depth:",depth)
+    if not tree.childs:
+        if ha>0:
+            yield('[Handicap "{}"]\n').format(
+                    " ".join(position_to_txt(h,size) for h in handicap))
+                
+
+             
 def reverse(tree):
     """reverse all the coords in the tree
     modify the tree"""
@@ -225,17 +364,17 @@ def do_reverse(tree,size):
             raise InvalidSgfException("invalid coordinate "+v)
     for i,(name,value) in enumerate(tree.properties):
         
-        if name in {"B","W"}:
+        if name in ("B","W"):
             value[0]=r(value[0])
             
-        elif name in {"AR","LN"}: #pragma: no cover
+        elif name in ("AR","LN"): #pragma: no cover
             value=[":".join(r(coord) for coord in compound.split(":"))
                for compound in v]
         
-        elif name in {"AB","AW","AE","CR","DD","MA","SL","SQ","TR"}:
+        elif name in ("AB","AW","AE","CR","DD","MA","SL","SQ","TR"):
             value=[r(coord) for coord in value]
         
-        elif name in {"LB"}:
+        elif name in ("LB",):
             def switch(v):
                 point,text=v.split(":",1)
                 return r(point)+":"+text
@@ -254,10 +393,13 @@ if __name__ == "__main__":
                         help="limit the variations to LIMIT depth")
     parser.add_argument("--reverse",action="store_true",
                         help="reverse the board upside down")
+    parser.add_argument("--to-txt",action="store_true",
+                        help="save to txt format")
+
     parser.add_argument("file",action="store")
     args = parser.parse_args()
     new_file = tree(tokenize(open(args.file,encoding="utf-8")))
-    
+   
     if args.filter:
         filter(new_file)
     
@@ -265,9 +407,21 @@ if __name__ == "__main__":
         limit(new_file,args.limit)
     
     if args.reverse:
-        
         reverse(new_file)
-        
-    print (to_sgf(new_file),
+
+    if args.to_txt:
+        try:
+            print(to_txt(new_file),
+              file = open("new-"+args.file.replace(".sgf",".txt"),
+                          "w",
+                          encoding="utf-8"))
+        except :
+            #raise
+            
+            traceback.print_exc()
+            
+            pdb.post_mortem()
+    else:
+        print (to_sgf(new_file),
            file=open("new-"+args.file,"w",encoding="utf-8"))
 
