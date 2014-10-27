@@ -214,6 +214,8 @@ def node_to_sgf(tree,has_slibings=True):
         
     
 def position_to_txt(position,size):
+    """ TODO finish this function"""
+
     coords = [string.ascii_letters.index(p) for p in position]
     if len(coords)!=2:
         raise InvalidSgfException("bad coordinate "+position)
@@ -224,7 +226,8 @@ def position_to_txt(position,size):
 
 def node_to_txt(tree, depth=0, size=None,
                 ha=0, color="B",handicap = None,first=-1,first_white=False):
-    
+    """TODO finish this function"""
+
     #print (depth,tree.properties)
     if handicap is None:
         handicap = []
