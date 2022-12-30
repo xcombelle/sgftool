@@ -11,11 +11,10 @@ import pdb
 import sgfparsing  # Parsing logic
 
 # Whitelist of properties not filtered out by filter_properties
-whitelist_property = set("AP ST GM FF CA RU SZ KM PW PB WR BR DT EV RO PC SO"
-                         "HA AB AW AE B W".split())
+whitelist_property = set("AP ST GM FF CA RU SZ KM PW PB WR BR DT EV RO PC SO HA AB AW AE B W".split())
 
 
-def filter_properties(tree):
+def filter_properties(tree, whitelist_property=whitelist_property):
     """filter out the properties not white listed
     to keep only the move played
     modify the tree"""
@@ -119,8 +118,7 @@ def node_to_txt(tree, depth=0, size=None,
         for name, values in tree.properties:
             if name == "RU":
                 if len(values) != 1:
-                    raise sgfparsing.InvalidSgfException("too much values for "
-                                                         "RU")
+                    raise sgfparsing.InvalidSgfException("too much values for RU")
                 else:
                     if values[0] == "Japanese":
                         japanese = True
@@ -128,23 +126,18 @@ def node_to_txt(tree, depth=0, size=None,
             elif name == "AB":
                 handicap.extend(values)
             elif name == "AW":
-                raise sgfparsing.CantProcessSgfException("adding stones is "
-                                                         "unexpected")
+                raise sgfparsing.CantProcessSgfException("adding stones is unexpected")
             elif name == "SZ":
                 if len(values) != 1:
-                    raise sgfparsing.InvalidSgfException("SZ property has "
-                                                         "several values")
+                    raise sgfparsing.InvalidSgfException("SZ property has several values")
                 if not values[0].isdigit():
-                    raise sgfparsing.InvalidSgfException("SZ property is not "
-                                                         "integer")
+                    raise sgfparsing.InvalidSgfException("SZ property is not integer")
                 size = int(values[0])
             elif name == "HA":
                 if len(values) != 1:
-                    raise sgfparsing.InvalidSgfException("HA property has "
-                                                         "several values")
+                    raise sgfparsing.InvalidSgfException("HA property has several values")
                 if not values[0].isdigit():
-                    raise sgfparsing.InvalidSgfException("HA property is not "
-                                                         "integer")
+                    raise sgfparsing.InvalidSgfException("HA property is not integer")
                 ha = int(values[0])
         if ha is None:
             ha = 0
@@ -167,8 +160,7 @@ def node_to_txt(tree, depth=0, size=None,
             elif name == "W":
                 w = values
             elif name in ("AW", "AB"):
-                raise sgfparsing.CantProcessSgfException("add white or black "
-                                                         "in tree")
+                raise sgfparsing.CantProcessSgfException("add white or black in tree")
             elif name == "C":
                 if len(values) != 1:
                     raise sgfparsing.InvalidSgfException("comment values !=1")
@@ -195,12 +187,10 @@ def node_to_txt(tree, depth=0, size=None,
             if w or b:
                 if first_white ^ (depth-first) % 2 == 1:
                     if not (w and not b):
-                        raise sgfparsing.CantProcessSgfException("non altering "
-                                                                 "colors")
+                        raise sgfparsing.CantProcessSgfException("non altering colors")
                     else:
                         if len(w) != 1:
-                            raise sgfparsing.InvalidSgfException("W property "
-                                                                 "length != 1")
+                            raise sgfparsing.InvalidSgfException("W property length != 1")
                         else:
                             # print(w[0])
                             yield "{num}.{coord}{comment}\n".format(
@@ -209,12 +199,10 @@ def node_to_txt(tree, depth=0, size=None,
                                 comment=comment)
                 else:
                     if not (b and not w):
-                        raise sgfparsing.CantProcessSgfException("non altering "
-                                                                 "colors")
+                        raise sgfparsing.CantProcessSgfException("non altering colors")
                     else:
                         if len(b) != 1:
-                            raise sgfparsing.InvalidSgfException("B property "
-                                                                 "length != 1")
+                            raise sgfparsing.InvalidSgfException("B property length != 1")
                         else:
                             yield "{num}.{coord}{comment}\n".format(
                                 num=depth - first + 1,
