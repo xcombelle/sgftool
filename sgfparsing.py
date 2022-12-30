@@ -29,49 +29,52 @@ def tokenize(file):
     ("property_name","XX")
     ("property_value","xx")
     """
-    f = iter(partial(file.read, 1), "")
-    last_char = " "
-    uppers = set(string.ascii_uppercase)
+    try:
+        f = iter(partial(file.read, 1), "")
+        last_char = " "
+        uppers = set(string.ascii_uppercase)
 
-    while True:
-        # Skip space characters
-        while last_char.isspace():
-            last_char = next(f)
-
-        # Return property name
-        if last_char in uppers:
-            property_name = []
-            while last_char in uppers:
-                property_name.append(last_char)
+        while True:
+            # Skip space characters
+            while last_char.isspace():
                 last_char = next(f)
-            yield "property_name", "".join(property_name)
 
-        # Return property value
-        elif last_char == "[":
-            try:
-                last_char = next(f)
-                property_value = []
-                while last_char != "]":
-
-                    # Skip first "]" for comment property value
-                    if last_char == "\\":
-                        property_value.append(next(f))
-
-                    else:
-                        property_value.append(last_char)
+            # Return property name
+            if last_char in uppers:
+                property_name = []
+                while last_char in uppers:
+                    property_name.append(last_char)
                     last_char = next(f)
-                yield "property_value", "".join(property_value)
+                yield "property_name", "".join(property_name)
 
-            except StopIteration:
+            # Return property value
+            elif last_char == "[":
+                try:
+                    last_char = next(f)
+                    property_value = []
+                    while last_char != "]":
 
-                raise InvalidSgfException("unclosed property value")
+                        # Skip first "]" for comment property value
+                        if last_char == "\\":
+                            property_value.append(next(f))
 
-            last_char = next(f)
+                        else:
+                            property_value.append(last_char)
+                        last_char = next(f)
+                    yield "property_value", "".join(property_value)
 
-        # Return special token
-        else:
-            yield "special", last_char
-            last_char = next(f)
+                except StopIteration:
+
+                    raise InvalidSgfException("unclosed property value")
+
+                last_char = next(f)
+
+            # Return special token
+            else:
+                yield "special", last_char
+                last_char = next(f)
+    except StopIteration:
+        return
 
 
 def tree(tokens):
