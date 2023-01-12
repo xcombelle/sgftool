@@ -22,7 +22,7 @@ def filter_properties(tree, whitelist_property=whitelist_property):
     tree.properties = [(name, values) for name, values in tree.properties
                        if name in whitelist_property]
     for child in tree.children:
-        filter_properties(child)
+        filter_properties(child, whitelist_property)
 
 
 def first_variation(tree):

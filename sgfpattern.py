@@ -134,7 +134,7 @@ def generate_positions(input_file_name):
 
     tree = sgfparsing.tree(sgfparsing.tokenize(open(input_file_name,
                                                         encoding="utf-8")))
-    sgftool.filter_properties(tree, whitelist_properties= set("SZ HA AB AW AE B W".split()))
+    sgftool.filter_properties(tree, whitelist_property= set("SZ HA AB AW AE B W".split()))
     
 
     return "\n".join(tree_to_positions(tree))
@@ -177,8 +177,51 @@ def decompress(zfile):
                 temp[n]=b
             result.append("".join(temp))
     return "\n".join(result)
-if __name__ == "__main__":
-    import sys
+
+ 
+def switch_color(point_list, size):
+    result - []  
+    for x,y,color in point_list:
+        match color:
+            case 'X': color = 'O'
+            case 'O': color = 'X'
+        result.append(x,y,color)
+    return result
+
+def apply_symetry(function, size, point_list):
+    result= []
+    for x,y,color in point_list:
+        x,y=function(size,x,y)
+        result.append(x,y,color)
+    return result
+
+def miror(size,x,y):
+    return (size-x,y)
+
+
+
+def rotate_1_4(size,x,y):
+    return (size-y, x)
+
+
+def symetries_and_colors(points_list, size, symetries= True, color_exact = False):
+    results=[points_list]
+    
+    if not color_exact:
+        results.append(switch_color(points_list, size))
+
+    if symetries == True:
+        pass
+
+
+
+
+import sys
+def main():
+
     (decompress(dbg(compress((generate_positions( sys.argv[1]))))))
     
+if __name__ == "__main__":
+    main()
+
     
