@@ -29,38 +29,52 @@ def tokenize(file):
     ("property_name","XX")
     ("property_value","xx")
     """
-    import re
-    regexp = re.compile(r"""\s*(?P<special>
-                \(
-                |\)
-                |;)
-                |(?P<property_name>[A-Z]{1,2})
-                 (\[
-                 (?P<property_value>(\\.
-                                    |[^\]]
-                                    )*
-                )
-                \])+
-               \s*""",
-               re.VERBOSE|re.DOTALL)
+    try:
+        f = iter(partial(file.read, 1), "")
+        last_char = " "
+        uppers = set(string.ascii_uppercase)
 
-    f = file.read()
-    
-    for match in regexp.finditer(f):
-        match=match.groupdict()
+        while True:
+            # Skip space characters
+            while last_char.isspace():
+                last_char = next(f)
 
-        if match["special"] is not None:  yield ("special",match["special"])
-        if match["property_name"] is not None: yield ("property_name", match["property_name"])
-        property_value = match["property_value"]
-        if property_value is not None:
-            if isinstance(property_value,str):
-                property_value = re.sub(r"\\(.)",lambda m:m.group(1),property_value)
-                yield("property_value",property_value)
+            # Return property name
+            if last_char in uppers:
+                property_name = []
+                while last_char in uppers:
+                    property_name.append(last_char)
+                    last_char = next(f)
+                yield "property_name", "".join(property_name)
+
+            # Return property value
+            elif last_char == "[":
+                try:
+                    last_char = next(f)
+                    property_value = []
+                    while last_char != "]":
+
+                        # Skip first "]" for comment property value
+                        if last_char == "\\":
+                            property_value.append(next(f))
+
+                        else:
+                            property_value.append(last_char)
+                        last_char = next(f)
+                    yield "property_value", "".join(property_value)
+
+                except StopIteration:
+
+                    raise InvalidSgfException("unclosed property value")
+
+                last_char = next(f)
+
+            # Return special token
             else:
-                for p in property_value:
-                    p = re.sub(r"\\(.)",lambda m:m.group(1) ,p)
-                    yield ("property_value",p)
-
+                yield "special", last_char
+                last_char = next(f)
+    except StopIteration:
+        return
 
 
 def tree(tokens):
