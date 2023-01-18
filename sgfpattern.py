@@ -181,19 +181,21 @@ def decompress(zfile):
  
 def switch_color(point_list, size):
     result = []  
-    for x,y,color in point_list:
-        match color:
-            case 'X': color = 'O'
-            case 'O': color = 'X'
-        result.append(x,y,color)
+    for x,y,colors in point_list:
+        for i, color in enumerate(colors):
+            match color:
+                case 'X': color = 'O'
+                case 'O': color = 'X'
+            colors[i] = color
+        result.append(x,y,colors)
     return result
 
 
 def apply_symmetry(function, size, point_list):
     result = []
-    for x,y,color in point_list:
+    for x,y,colors in point_list:
         x,y=function(size,x,y)
-        result.append(x,y,color)
+        result.append(x,y,colors)
     return result
 
 def mirror(size,x,y):
@@ -212,9 +214,29 @@ def symetries_and_colors(points_list, size, symmetries= True, color_exact = Fals
         results.append(switch_color(points_list, size))
 
     if symmetries == True:
-        #r = 
-        #result.append(apply_symetry(
-        pass
+
+        # if we did 
+        # for p in result:
+        #     result.append(apply( _f_ , size, p))
+        # it would extend result while iterating on it 
+        # and eventually run out of memory while iterating an infinite loop
+
+        temp = result[:]
+        for p in temp:
+            result.append(apply(mirror, size, p))
+        
+        temp = result[:]
+        for p in temp:
+            r1 = apply(rotate_1_4, size, p)
+            result.append(r1)
+            r2 = apply(rotate_1_4, size, r1)
+            result.append(r2)
+            result.append(apply(rotate_1_4, size, r2))
+    return result
+
+def make_pattern(points_list, size):
+    pass
+
 
 
 
