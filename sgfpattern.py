@@ -180,7 +180,7 @@ def decompress(zfile):
 
  
 def switch_color(point_list, size):
-    result - []  
+    result = []  
     for x,y,color in point_list:
         match color:
             case 'X': color = 'O'
@@ -188,14 +188,15 @@ def switch_color(point_list, size):
         result.append(x,y,color)
     return result
 
-def apply_symetry(function, size, point_list):
-    result= []
+
+def apply_symmetry(function, size, point_list):
+    result = []
     for x,y,color in point_list:
         x,y=function(size,x,y)
         result.append(x,y,color)
     return result
 
-def miror(size,x,y):
+def mirror(size,x,y):
     return (size-x,y)
 
 
@@ -204,14 +205,17 @@ def rotate_1_4(size,x,y):
     return (size-y, x)
 
 
-def symetries_and_colors(points_list, size, symetries= True, color_exact = False):
+def symetries_and_colors(points_list, size, symmetries= True, color_exact = False):
     results=[points_list]
     
     if not color_exact:
         results.append(switch_color(points_list, size))
 
-    if symetries == True:
+    if symmetries == True:
+        #r = 
+        #result.append(apply_symetry(
         pass
+
 
 
 
