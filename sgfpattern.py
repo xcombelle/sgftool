@@ -235,7 +235,16 @@ def symetries_and_colors(points_list, size, symmetries= True, color_exact = Fals
     return result
 
 def make_pattern(points_list, size):
-    pass
+    min_x = min([x for x,y,colors in points_list])
+    max_x = max([x for x,y,colors in points_list])
+    min_y = min([y for x,y,colors in points_list])
+    max_y = max([y for x,y,colors in points_list])
+    dictionary  = {}
+    for x,y,colors in points_list:
+        dictionary[(x,y)] = colors
+	
+	
+ 
 
 
 
