@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+	<body>
+	<script>
+		document.write("<table>");
+
+		for(var y =0; y!=23; y++) {
+			document.write("<tr>");
+
+			for (var x = 0; x!= 23; x++) {
+				document.write("<td  border='1' id='"+x.toString()+'_'+y.toString() + "'></td>");
+			}
+			document.write("</tr>");
+		}
+		document.write("</table>");
+		document.write("<label for='select_mode'>select mode</label><input type='checkbox' id='select_mode'>");
+		document.write("<label for='rectangle'>select rectangle</label><input type='checkbox' id='rectangle' checked>");
+		
+		//alert("la");
+		var b_first=true;
+		var first=undefined;
+		var secodn = undefined;
+
+		var input= [];
+        var selection= [];
+		function display_selection(selection) {
+			console.log("ici");
+			for (var x=0 ; x <=22; x++) {
+				for (var y=0; y <= 22; y++) {
+					var el=document.getElementById(x.toString()+"_"+y.toString());
+					if(selection[x][y]) {
+						el.style.backgroundColor ="red";
+					}
+					else {
+						el.style.backgroundColor ="white";
+					}
+				}
+			}
+		}
+		function constructor(square,input,selection,xx,yy) {
+		
+			return function(event) {
+					const select_mode = document.getElementById("select_mode").checked;
+					const rectangle = document.getElementById("rectangle").checked;
+
+				    console.log(select_mode, rectangle);	
+					if (!select_mode) {
+						change_square(square,input,xx,yy);
+					} else {
+						if (rectangle) {
+							console.log("START:",xx,yy);
+							if (b_first) {
+								first=[xx,yy];
+								b_first=false;
+							} else {
+								second=[xx,yy];
+								max_y = Math.max(first[1],second[1]);
+								min_y = Math.min(first[1],second[1]);
+								max_x = Math.max(first[0],second[0]);
+								min_x = Math.min(first[0],second[0]);
+								for (var x=0 ; x <=22; x++) {
+									for (var y=0; y <= 22; y++) {
+										selection[x][y] = false;
+									}
+								}
+								for (var x=min_x; x <= max_x; x++) {
+									for (var y=min_y; y <= max_y; y++) {
+										selection[x][y] = true;
+									}
+								}
+								display_selection(selection);
+								b_first= true;
+							}
+						} else {
+							selection[xx][yy] = !selection[xx][yy];
+							display_selection(selection);
+						}
+					}
+			}
+
+		};
+		for(var x =0; x!==23; x++) {
+			input.push([]);
+			selection.push([])
+			for (var y = 0; y!== 23; y++) {
+				input[x][y] = (x===0 || x===22 || y === 0|| y===22) ? "#": "'";
+				selection[x][y] = false;
+				var square = document.getElementById(x.toString()+'_'+y.toString());
+			    refresh(input,x,y);
+				square.addEventListener('click',constructor(square, input, selection,x, y));
+			}
+		}
+		function change_square(square, input, x, y) {
+			var r;
+			switch( input[x][y]) {
+				case "'": 
+					r = 'X'; 
+					break;
+				case "X":
+					r= 'O';
+					break;
+				case "O":
+					r = "'";
+					break;
+				case "#":
+					r="#";
+					break;
+			}
+			input[x][y] = r;
+			refresh(input,x,y);
+		}
+
+		function refresh(input, x, y) {
+			var square= document.getElementById( x.toString()+"_"+y.toString());
+			square.innerHTML = input[x][y];
+			
+
+		}
+	/**/
+	</script>
+<style>
+* {
+font-family:monospace;
+user-select:none;
+}
+
+			table, th, td {
+  border: 1px solid black;
+  border-collapse: collapse;
+}
+</style>
+	</body>
+</html>

@@ -31,6 +31,7 @@ def has_liberties(goban, size, x, y, color):
             if goban[aa][bb]=="'":
                 return True
     return False
+
 def go_string(goban, size, x, y, color):
     visited = set()
     result = []
@@ -181,21 +182,19 @@ def decompress(zfile):
  
 def switch_color(point_list, size):
     result = []  
-    for x,y,colors in point_list:
-        for i, color in enumerate(colors):
-            match color:
-                case 'X': color = 'O'
-                case 'O': color = 'X'
-            colors[i] = color
-        result.append(x,y,colors)
+    for x,y,color in point_list:
+        match color:
+           case 'X': color = 'O'
+           case 'O': color = 'X'
+        result.append((x,y,color))
     return result
 
 
-def apply_symmetry(function, size, point_list):
+def apply(function, size, point_list):
     result = []
     for x,y,colors in point_list:
         x,y=function(size,x,y)
-        result.append(x,y,colors)
+        result.append((x,y,colors))
     return result
 
 def mirror(size,x,y):
@@ -208,16 +207,16 @@ def rotate_1_4(size,x,y):
 
 
 def symetries_and_colors(points_list, size, symmetries= True, color_exact = False):
-    results=[points_list]
+    result=[points_list]
     
     if not color_exact:
-        results.append(switch_color(points_list, size))
+        result.append(switch_color(points_list, size))
 
     if symmetries == True:
 
         # if we did 
         # for p in result:
-        #     result.append(apply( _f_ , size, p))
+        #     esult.append(apply( _f_ , size, p))
         # it would extend result while iterating on it 
         # and eventually run out of memory while iterating an infinite loop
 
@@ -235,16 +234,31 @@ def symetries_and_colors(points_list, size, symmetries= True, color_exact = Fals
     return result
 
 def make_pattern(points_list, size):
-    min_x = min([x for x,y,colors in points_list])
-    max_x = max([x for x,y,colors in points_list])
-    min_y = min([y for x,y,colors in points_list])
-    max_y = max([y for x,y,colors in points_list])
-    dictionary  = {}
-    for x,y,colors in points_list:
-        dictionary[(x,y)] = colors
-	
-	
- 
+    global DEBUG 
+    DEBUG=False
+    min_x = dbg("min x", min([x for x,y,colors in points_list]))
+    max_x = dbg("max x",max([x for x,y,colors in points_list]))
+    min_y = dbg("min y",min([y for x,y,colors in points_list]))
+    max_y = dbg("max y",max([y for x,y,colors in points_list]))
+    d = dbg("positions",dict([((x,y),colors) for x,y, colors in points_list]))
+    result = []
+    for y in range(0,size+2):
+        for x in range(0,size+2):
+            if y < min_y:
+                dbg("1")
+                continue
+            elif y == min_y and x<min_x:
+                dbg("2")
+                continue
+            elif y > max_y:
+                dbg("3")
+                continue
+            elif y == max_y and x> max_x:
+                dbg("4")
+                continue
+            result.append(d.get(dbg("TESTER",(x,y)),"."))
+    DEBUG=True
+    return "".join(result)
 
 
 
@@ -253,8 +267,34 @@ def make_pattern(points_list, size):
 
 import sys
 def main():
+    import sys
+    import glob
+    import os.path
+    import json
+    import re
+    if sys.argv[1] == "compress":
+    
+        source = sys.argv[2]
+        destination = sys.argv[3]
+        open(destination,"w").write(compress(generate_positions(source)))
+    elif sys.argv[1] == "search":
+        pattern = json.loads(sys.argv[2])
 
-    (decompress(dbg(compress((generate_positions( sys.argv[1]))))))
+        pattern = "|".join([make_pattern(point_list, pattern["size"]) for point_list in symetries_and_colors(pattern["points_list"], pattern["size"], pattern["symmetries"], pattern["color_exact"])])
+        print(pattern)
+        regexp = re.compile(pattern)
+        for file_name in sys.stdin:
+            if regexp.search(decompress(open(file_name[:-1]).read())):
+                print(file_name)
+    else:
+        print ("ERROR")
+
+
+
+    position=sys.argv[1]
+
+
+    #(decompress(dbg(compress((generate_positions( sys.argv[1]))))))
     
 if __name__ == "__main__":
     main()
