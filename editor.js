@@ -1,34 +1,39 @@
-var b_first=false;
-var first = undefined;
-var second = undefined;
+"use strict";
+let b_first=false;
+let first = undefined;
+let second = undefined;
 
-var input= [];
-var selection= [];
+let input= [];
+let selection= [];
 
 
 
-function display_selection(selection) {
+function refreshBackground(selection) {
+    console.log("state",state);
     for (var x=0 ; x !== 21; x++) {
         for (var y=0; y !== 21; y++) {
             var el=document.getElementById(x.toString()+"_"+y.toString());
-            if some_selected(selection) {
-				if(selection[x][y]) {
-					el.style.backgroundColor ="green";
-				}
-				else {
-					el.style.backgroundColor ="white";
-				}
-			} else {
-				if (b_first) {
-					if ([x,y] === first) {
-						el.style.backgroundColor = "red";
-					} else {
-						el.style.backgroundColor = "white";
-					}
-				} else {
-					el.style.backgroundColor = "white";
-				}
-
+            if (state == "firstChosen") {
+                //console.log("aqui",[y,x],first); // TODO: investaigate wht reverse
+                if (x== first[0] && y == first[1]) {
+                    console.log("sdfjhkjsdfjhkdk");
+                    el.style.backgroundColor = "red";
+                } else {
+                    el.style.backgroundColor = "white";
+                }
+            } else {
+             
+            
+            
+                if (some_selected(selection)) {
+                    if(selection[x][y]) {
+                        el.style.backgroundColor ="green";
+                    }
+                    else {
+                        el.style.backgroundColor ="white";
+                    }
+                }
+            }
         }
     }
 }
@@ -61,27 +66,34 @@ function create_json(input, selection) {
     }
     return result;
 } 
-
+let state = "norect"; 
 function constructor(square,input,selection,xx,yy) {
 
     return function(event) {
         const select_mode = document.getElementById("select_mode").checked;
         const rectangle = document.getElementById("rectangle").checked;
 
-        console.log(select_mode, rectangle);	
+        console.log(select_mode, rectangle);    
         if (!select_mode) {
             change_square(square,input,xx,yy);
         } else {
             if (rectangle) {
-                if (!b_first) {
+                
+                if (state==="norect") {
+                    state = "firstChosen";
                     first=[xx,yy];
-                    b_first=true;
+                    selection = [];
+                    for(var x =0; x!==21; x++) {
+                        input.push([]);
+                        selection.push([]);
+                    }
                 } else {
+                    state = "secondChosen";
                     second=[xx,yy];
-                    max_y = Math.max(first[1],second[1]);
-                    min_y = Math.min(first[1],second[1]);
-                    max_x = Math.max(first[0],second[0]);
-                    min_x = Math.min(first[0],second[0]);
+                    let max_y = Math.max(first[1],second[1]);
+                    let min_y = Math.min(first[1],second[1]);
+                    let max_x = Math.max(first[0],second[0]);
+                    let min_x = Math.min(first[0],second[0]);
                     for (var x=0 ; x !==21; x++) {
                         for (var y=0; y !== 21; y++) {
                             selection[x][y] = false;
@@ -92,16 +104,15 @@ function constructor(square,input,selection,xx,yy) {
                             selection[x][y] = true;
                         }
                     }
-                    display_selection(selection);
-                    b_first= false;
+                    state="norect"
                 }
             } else {
                 selection[xx][yy] = !selection[xx][yy];
-                display_selection(selection);
             }
-
-        
+            
         }
+          
+        refreshBackground(selection);
         document.getElementsByTagName("pre")[0].textContent= "'"+JSON.stringify({
             point_list:create_json(input,selection),
             size: 21,
@@ -146,6 +157,7 @@ function change_square(square, input, x, y) {
 }
 
 function refresh(input, x, y) {
-    var square = document.getElementById( x.toString()+"_"+y.toString());
+    let square = document.getElementById( x.toString()+"_"+y.toString());
     square.innerHTML = input[x][y];
+    
 }

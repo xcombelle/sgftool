@@ -2,48 +2,48 @@
 <html>
 
 <body>
-	<div class="main" >
+    <div class="main" >
 <script>
-		document.write("<table>");
+        document.write("<table>");
 
-		for (let x = 0; x !== 21; x++) {
-			document.write("<tr>");
+        for (let x = 0; x !== 21; x++) {
+            document.write("<tr>");
 
-			for (let y = 0; y !== 21; y++) {
-				document.write("<td  border='1' id='" + x.toString() + '_' + y.toString() + "'></td>");
-			}
-			document.write("</tr>");
-		}
-		document.write("</table>");
-		document.write("<p><label for='select_mode'>select mode</label><input type='checkbox' id='select_mode'></p>");
-		document.write("<p><label for='rectangle'>select rectangle</label><input type='checkbox' id='rectangle' checked></p>");
-	</script>
-	</div>
-	<pre></pre>
-	<script src="editor.js"></script>
-	<style>
-		.main {
-			font-family: monospace;
-			white-space: pre;
-			user-select: none;
+            for (let y = 0; y !== 21; y++) {
+                document.write("<td  border='1' id='" + x.toString() + '_' + y.toString() + "'></td>");
+            }
+            document.write("</tr>");
+        }
+        document.write("</table>");
+        document.write("<p><label for='select_mode'>select mode</label><input type='checkbox' id='select_mode'></p>");
+        document.write("<p><label for='rectangle'>select rectangle</label><input type='checkbox' id='rectangle' checked></p>");
+    </script>
+    </div>
+    <pre></pre>
+    <script src="editor.js"></script>
+    <style>
+        .main {
+            font-family: monospace;
+            white-space: pre;
+            user-select: none;
 
-			-webkit-touch-callout: none; /* iOS Safari */
-			-webkit-user-select: none; /* Safari */
-			-khtml-user-select: none;	/* Konqueror HTML */
-			-moz-user-select: none; /* Old versions of Firefox */
-			-ms-user-select: none; /* Internet Explorer/Edge */
-			user-select: none; /* Non-prefixed version, currently
+            -webkit-touch-callout: none; /* iOS Safari */
+            -webkit-user-select: none; /* Safari */
+            -khtml-user-select: none;    /* Konqueror HTML */
+            -moz-user-select: none; /* Old versions of Firefox */
+            -ms-user-select: none; /* Internet Explorer/Edge */
+            user-select: none; /* Non-prefixed version, currently
                                   supported by Chrome, Edge, Opera and Firefox */
 
-		}
+        }
 
-		table,
-		th,
-		td {
-			border: 1px solid black;
-			border-collapse: collapse;
-		}
-	</style>
+        table,
+        th,
+        td {
+            border: 1px solid black;
+            border-collapse: collapse;
+        }
+    </style>
 </body>
 
 </html>
